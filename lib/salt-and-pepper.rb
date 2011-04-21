@@ -23,6 +23,8 @@ module SaltPepper
 	end
 
 	def self.code(size = 8, chars = ('A'..'Z').to_a + (0..9).to_a)
+		chars = chars.to_a if chars.is_a?(Range)
+		chars = chars.chars.to_a.uniq if chars.is_a?(String)
 		(1..size).map { chars[self.random_number(chars.length)] }.join
 	end
 

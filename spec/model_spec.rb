@@ -14,12 +14,8 @@ describe "User model" do
 			
 			encrypt :password
 			
-			validates :password, :presence => true
+			#validates :password, :length => { :maximum => 50, :if => :password_changed? }
 		end
-	end
-	
-	after(:each) do
-		@user = Class.new
 	end
 
 	it "should have the salt and pepper module included" do
@@ -91,5 +87,13 @@ describe "User model" do
 		end
 		
 	end
+	
+	#describe "column encryption" do
+	
+	#	it "should add a before_save hook" do
+	#		@user
+	#	end
+	
+	#end
 
 end

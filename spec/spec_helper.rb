@@ -1,5 +1,5 @@
-require 'rubygems'
+require 'active_support'
 require 'active_record'
-require 'sqlite3'
-require 'rspec'
+require 'digest'
+
 require 'salt-and-pepper'

@@ -1,10 +1,4 @@
-require "active_support"
-require "active_support/core_ext/class/inheritable_attributes"
-require "active_record"
-
 module SaltPepper
-	require "active_support/secure_random"
-	
 	HashAlgorithms = { :sha1 => [Digest::SHA1, 40], :sha256 => [Digest::SHA256, 64], :sha384 => [Digest::SHA384, 96], :sha512 => [Digest::SHA512, 128], :md5 => [Digest::MD5, 32] }
 	DefaultOptions = { :algorithm => :sha256, :salt_size => 64 }
 	SaltSize = 16..256

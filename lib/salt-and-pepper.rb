@@ -1,17 +1,16 @@
 module SaltPepper
-	HashAlgorithms = { :sha1 => [Digest::SHA1, 40], :sha256 => [Digest::SHA256, 64], :sha384 => [Digest::SHA384, 96], :sha512 => [Digest::SHA512, 128], :md5 => [Digest::MD5, 32] }
-	DefaultOptions = { :algorithm => :sha256, :salt_size => 64 }
-	SaltSize = 16..256
+	DefaultOptions = { :length => 128 }
+	Length = 96..192
 
 	def self.encrypt(password, options = DefaultOptions)
 		options.reverse_merge! DefaultOptions
-		salt = self.random_salt(options[:salt_size])
-		self.do_hash(password, salt, options[:algorithm]) + salt
+		check_options_for_encrypt options
+		salt = self.random_salt(options[:length])
+		self.do_hash(password, salt) + salt
 	end
 
-	def self.verify(password, hashed_password, options = DefaultOptions)
-		options.reverse_merge! DefaultOptions
-		self.do_hash(password, self.get_salt(hashed_password, options), options[:algorithm]) == self.get_hash(hashed_password, options)
+	def self.verify(password, hashed_password)
+		self.do_hash(password, self.get_salt(hashed_password)) == self.get_hash(hashed_password)
 	end
 
 	def self.token(size = 32)
@@ -39,25 +38,37 @@ module SaltPepper
 	
 	private
 	
-	def self.random_salt(size = DefaultOptions[:salt_size])
-		random_hex(size)
+	def self.check_options_for_encrypt(options)
+		options.each do |name, value|
+			case name.to_s
+				when "length" then
+					raise ArgumentError, "Length should be a Fixnum" unless value.is_a?(Fixnum)
+					raise ArgumentError, "Length should be within #{Length.inspect}" unless Length.include?(value)
+				else
+					raise ArgumentError, "Invalid option: #{name.to_s}"
+			end
+		end
+		true
+	end
+	
+	def self.random_salt(size = DefaultOptions[:length])
+		random_hex(size - 64)
 	end
 	
 	def self.random_hex(size)
 		SecureRandom.hex(size / 2)
 	end
 	
-	def self.do_hash(password, salt, algorithm)
-		HashAlgorithms[algorithm].first.hexdigest("#{password}:#{salt}")
+	def self.do_hash(password, salt)
+		Digest::SHA256.hexdigest("#{password}:#{salt}")
 	end
 	
-	def self.get_hash(hashed_password, options)
-		hashed_password[0...(HashAlgorithms[options[:algorithm]].last)]
+	def self.get_hash(hashed_password)
+		hashed_password[0...64]
 	end
 
-	def self.get_salt(hashed_password, options)
-		start = HashAlgorithms[options[:algorithm]].last
-		hashed_password[start...(start + options[:salt_size])]
+	def self.get_salt(hashed_password)
+		hashed_password[64...hashed_password.length]
 	end
 
 
@@ -69,30 +80,15 @@ module SaltPepper
 		
 			def encrypt(*args)
 				options = args.extract_options!
-				check_options_for_encrypt options
-				raise ArgumentError, "Encrypt: no columns specified" if args.empty?
+				options.keys.each { |k| raise ArgumentError, "Invalid option: #{k.to_s}" unless DefaultOptions.keys.include?(k.to_sym) }
+				raise ArgumentError, "No columns specified" if args.empty?
 				args.each do |arg|
-					raise ArgumentError, "Encrypt: column name should be a symbol or a string" unless arg.is_a?(String) || arg.is_a?(Symbol)
-					raise ArgumentError, "Encrypt: '#{arg.to_s}' is not a valid column name" unless self.column_names.include?(arg.to_s)
+					raise ArgumentError, "Column name should be a symbol or a string" unless arg.is_a?(String) || arg.is_a?(Symbol)
+					raise ArgumentError, "'#{arg.to_s}' is not a valid column name" unless self.column_names.include?(arg.to_s)
 					write_inheritable_hash(:encrypted_attributes, { arg.to_sym => options.symbolize_keys.reverse_merge(DefaultOptions) })
 				end
 			end
-			
-			private
-			
-			def check_options_for_encrypt(options)
-				options.each do |k, v|
-					case k.to_s
-						when "algorithm" then raise ArgumentError, "Encrypt: unsupported algorithm '#{v.to_s}'. Supported: #{HashAlgorithms.keys.inspect}" unless HashAlgorithms.include?(v.to_sym)
-						when "salt_size" then
-							raise ArgumentError, "Encrypt: salt_size should be a Fixnum" unless v.is_a?(Fixnum)
-							raise ArgumentError, "Encrypt: salt_size should be within #{SaltSize.inspect}" unless SaltSize.include?(v)
-						else
-							raise ArgumentError, "Encrypt: invalid option '#{k.to_s}'"
-					end
-				end
-				true
-			end
+
 		end
 
 		def self.included(klass)
@@ -100,6 +96,8 @@ module SaltPepper
 			klass.write_inheritable_hash(:encrypted_attributes, {})
 		end
 	end
+	
+	class ArgumentError < ArgumentError; end
 	
 end
 

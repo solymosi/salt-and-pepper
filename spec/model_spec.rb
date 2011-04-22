@@ -50,14 +50,14 @@ describe "User model" do
 		end
 		
 		it "should allow valid parameters" do
-			@user.encrypt :password, :algorithm => :sha1, :salt_size => 32
+			@user.encrypt :password, :length => 100
 			@user.encrypted_attributes.count.should == 1
-			@user.encrypted_attributes[:password].should == { :algorithm => :sha1, :salt_size => 32 }
+			@user.encrypted_attributes[:password].should == { :length => 100 }
 		end
 		
 		it "should apply defaults for unset options" do
-			@user.encrypt :password, :algorithm => :sha1
-			@user.encrypted_attributes[:password][:salt_size].should == SaltPepper::DefaultOptions[:salt_size]
+			@user.encrypt :password
+			@user.encrypted_attributes[:password][:length].should == SaltPepper::DefaultOptions[:length]
 		end
 		
 		it "should not add the same attribute twice" do

@@ -79,16 +79,11 @@ describe SaltPepper do
 			Digest::SHA256.hexdigest("secret:#{hash[64...128]}").should == hash[0...64]
 		end
 		
-		it "works with custom options" do
-			hash = SaltPepper::encrypt("secret", :algorithm => :md5, :salt_size => 32)
-			hash.length.should == 64
+		it "works with custom length" do
+			hash = SaltPepper::encrypt("secret", :length => 100)
+			hash.length.should == 100
 			hash.should =~ /\A[a-f0-9]*\z/
-			Digest::MD5.hexdigest("secret:#{hash[32...64]}").should == hash[0...32]
-		end
-		
-		it "uses default values for missing options" do
-			hash = SaltPepper::encrypt("secret", :salt_size => 128)
-			hash.length.should == 192
+			Digest::SHA256.hexdigest("secret:#{hash[64...128]}").should == hash[0...64]
 		end
 	
 	end
@@ -102,15 +97,9 @@ describe SaltPepper do
 		end
 		
 		it "works with custom options" do
-			hash = SaltPepper::encrypt("secret", :algorithm => :md5, :salt_size => 100)
-			SaltPepper::verify("secret", hash, :algorithm => :md5, :salt_size => 100).should == true
-			SaltPepper::verify("oops", hash, :algorithm => :md5, :salt_size => 100).should == false
-		end
-		
-		it "uses default values for missing options" do
-			hash = SaltPepper::encrypt("secret", :algorithm => :md5)
-			SaltPepper::verify("secret", hash, :algorithm => :md5).should == true
-			SaltPepper::verify("oops", hash, :algorithm => :md5).should == false
+			hash = SaltPepper::encrypt("secret", :length => 100)
+			SaltPepper::verify("secret", hash).should == true
+			SaltPepper::verify("oops", hash).should == false
 		end
 	
 	end

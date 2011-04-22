@@ -1,6 +1,6 @@
 require File.expand_path('spec_helper.rb', File.dirname(__FILE__))
 
-describe "User model" do
+describe "Model" do
 
 	before(:each) do
 		ActiveRecord::Base.establish_connection :adapter => "sqlite3", :database => ":memory:"
@@ -80,11 +80,14 @@ describe "User model" do
 		it "encrypts column on save" do
 			@user.encrypt :password
 			@u = @user.new
+			@u.password_cleartext.should == ""
 			@u.validate_password?.should == true
 			@u.password = "secret"
 			@u.validate_password?.should == true
+			@u.password_cleartext.should == "secret"
 			@u.save!
 			@u.validate_password?.should == false
+			@u.password_cleartext.should == ""
 			@u.password_is?("secret").should == true
 			@u.password_is?("oops").should == false
 		end

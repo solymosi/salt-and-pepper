@@ -97,6 +97,9 @@ module SaltPepper
 						def validate_#{arg.to_s}?
 							currently_plaintext?("#{arg.to_s}")
 						end
+						def #{arg.to_s}_cleartext
+							currently_plaintext?("#{arg.to_s}") ? (read_attribute(:#{arg.to_s}) || "") : ""
+						end
 					EVAL
 				end
 				if !self._save_callbacks.map { |c| c.filter.to_sym }.include?(:encrypt_columns_before_save)
@@ -130,11 +133,11 @@ module SaltPepper
 		end
 		
 		def encrypt_column(column, options)
-			write_attribute(column.to_sym, SaltPepper::encrypt(self[column.to_s], { :length => options[:length] }))
+			write_attribute(column.to_sym, SaltPepper::encrypt(read_attribute(column.to_sym), { :length => options[:length] }))
 		end
 		
 		def currently_plaintext?(column)
-			self[column.to_s].blank? || self.new_record? || self.changes.keys.include?(column.to_s)
+			read_attribute(column.to_sym).blank? || self.new_record? || self.changes.keys.include?(column.to_s)
 		end
 
 	end

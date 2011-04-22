@@ -83,6 +83,7 @@ describe "Model" do
 			@u.password_cleartext.should == ""
 			@u.validate_password?.should == true
 			@u.password = "secret"
+			@u.password_is?("secret").should == true
 			@u.validate_password?.should == true
 			@u.password_cleartext.should == "secret"
 			@u.save!

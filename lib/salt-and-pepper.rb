@@ -92,7 +92,7 @@ module SaltPepper
 					
 					self.class_eval <<-EVAL
 						def #{arg.to_s}_is?(check)
-							SaltPepper::verify(check, self.#{arg.to_s} || "")
+							currently_plaintext?("#{arg.to_s}") ? self.#{arg.to_s} == check : SaltPepper::verify(check, self.#{arg.to_s} || "")
 						end
 						def validate_#{arg.to_s}?
 							currently_plaintext?("#{arg.to_s}")

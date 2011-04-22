@@ -4,12 +4,14 @@ module SaltPepper
 	SaltSize = 16..256
 
 	def self.encrypt(password, options = DefaultOptions)
-		salt = self.generate_salt
-		self.do_hash(password, salt) + salt
+		options.reverse_merge! DefaultOptions
+		salt = self.random_salt(options[:salt_size])
+		self.do_hash(password, salt, options[:algorithm]) + salt
 	end
 
 	def self.verify(password, hashed_password, options = DefaultOptions)
-		self.do_hash(password, self.get_salt(hashed_password), options) == self.get_hash(hashed_password, options)
+		options.reverse_merge! DefaultOptions
+		self.do_hash(password, self.get_salt(hashed_password, options), options[:algorithm]) == self.get_hash(hashed_password, options)
 	end
 
 	def self.token(size = 32)
@@ -45,8 +47,8 @@ module SaltPepper
 		SecureRandom.hex(size / 2)
 	end
 	
-	def self.do_hash(password, salt)
-		Digest::SHA512.hexdigest("#{password}:#{salt}")
+	def self.do_hash(password, salt, algorithm)
+		HashAlgorithms[algorithm].first.hexdigest("#{password}:#{salt}")
 	end
 	
 	def self.get_hash(hashed_password, options)

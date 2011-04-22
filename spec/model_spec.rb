@@ -5,16 +5,15 @@ describe "User model" do
 	before(:each) do
 		ActiveRecord::Base.establish_connection :adapter => "sqlite3", :database => ":memory:"
 		ActiveRecord::Base.connection.create_table :users do |t|
-			t.string :password, :null => false
-			t.string :some_token
+			t.string :password
+			t.string :token
 		end
+		
+		class User; end
 		
 		@user = Class.new(ActiveRecord::Base) do
 			self.table_name = "users"
-			
-			encrypt :password
-			
-			#validates :password, :length => { :maximum => 50, :if => :password_changed? }
+			@_model_name = ActiveModel::Name.new(User)
 		end
 	end
 
@@ -35,29 +34,29 @@ describe "User model" do
 		end
 		
 		it "should add multiple attributes to the list" do
-			@user.encrypt :password, :some_token
+			@user.encrypt :password, :token
 			@user.encrypted_attributes.count.should == 2
 			@user.encrypted_attributes.keys.include?(:password).should == true
-			@user.encrypted_attributes.keys.include?(:some_token).should == true
+			@user.encrypted_attributes.keys.include?(:token).should == true
 		end
 		
 		it "should work properly when called multiple times" do
 			@user.encrypt :password
-			@user.encrypt :some_token
+			@user.encrypt :token
 			@user.encrypted_attributes.count.should == 2
 			@user.encrypted_attributes.keys.include?(:password).should == true
-			@user.encrypted_attributes.keys.include?(:some_token).should == true
+			@user.encrypted_attributes.keys.include?(:token).should == true
 		end
 		
 		it "should allow valid parameters" do
-			@user.encrypt :password, :length => 100
+			@user.encrypt :password, :length => 100, :skip_blank => false
 			@user.encrypted_attributes.count.should == 1
-			@user.encrypted_attributes[:password].should == { :length => 100 }
+			@user.encrypted_attributes[:password].should == { :length => 100, :skip_blank => false }
 		end
 		
 		it "should apply defaults for unset options" do
 			@user.encrypt :password
-			@user.encrypted_attributes[:password][:length].should == SaltPepper::DefaultOptions[:length]
+			@user.encrypted_attributes[:password].should == SaltPepper::DefaultModelOptions
 		end
 		
 		it "should not add the same attribute twice" do
@@ -74,26 +73,116 @@ describe "User model" do
 			lambda { @user.encrypt :password, :oops => true }.should raise_error(ArgumentError)
 		end
 		
-		it "should not allow invalid algorithm" do
-			lambda { @user.encrypt :password, :algorithm => :oops }.should raise_error(ArgumentError)
-		end
-		
-		it "should not allow invalid salt size" do
-			lambda { @user.encrypt :password, :salt_size => 0 }.should raise_error(ArgumentError)
-			lambda { @user.encrypt :password, :salt_size => -10 }.should raise_error(ArgumentError)
-			lambda { @user.encrypt :password, :salt_size => 1000 }.should raise_error(ArgumentError)
-			lambda { @user.encrypt :password, :salt_size => false }.should raise_error(ArgumentError)
-			lambda { @user.encrypt :password, :salt_size => "oops" }.should raise_error(ArgumentError)
-		end
-		
 	end
 	
-	#describe "column encryption" do
+	describe "column encryption" do
 	
-	#	it "should add a before_save hook" do
-	#		@user
-	#	end
+		it "encrypts column on save" do
+			@user.encrypt :password
+			@u = @user.new
+			@u.validate_password?.should == true
+			@u.password = "secret"
+			@u.validate_password?.should == true
+			@u.save!
+			@u.validate_password?.should == false
+			@u.password_is?("secret").should == true
+			@u.password_is?("oops").should == false
+		end
+		
+		it "does not rehash column if its value was not changed" do
+			@user.encrypt :password
+			@u = @user.new
+			@u.password = "secret"
+			@u.save!
+			@u.validate_password?.should == false
+			@u.save!
+			@u.validate_password?.should == false
+			@u.password_is?("secret").should == true
+			@u.password = @u.password
+			@u.validate_password?.should == false
+			@u.save!
+			@u.password_is?("secret").should == true
+		end
+		
+		it "does not hash column if it is nil or blank" do
+			@user.encrypt :password
+			@u = @user.new
+			@u.validate_password?.should == true
+			@u.save!
+			@u.password.should be_nil
+			@u.validate_password?.should == true
+			@u.password = ""
+			@u.validate_password?.should == true
+			@u.save!
+			@u.password.should be_nil
+			@u.validate_password?.should == true
+			@u.password = "secret"
+			@u.validate_password?.should == true
+			@u.save!
+			@u.validate_password?.should == false
+			@u.password = ""
+			@u.validate_password?.should == true
+			@u.save!
+			@u.password_is?("secret").should == true
+			@u.validate_password?.should == false
+			@u.password = nil
+			@u.validate_password?.should == true
+			@u.save!
+			@u.password_is?("secret").should == true
+		end
+		
+		it "hashes columns with skip_blank: false" do
+			@user.encrypt :password, :skip_blank => false
+			@u = @user.new
+			@u.validate_password?.should == true
+			@u.password = nil
+			@u.validate_password?.should == true
+			@u.save!
+			@u.password_is?("").should == true
+			@u.validate_password?.should == false
+			@u.password = "secret"
+			@u.validate_password?.should == true
+			@u.save!
+			@u.validate_password?.should == false
+			@u.password = ""
+			@u.validate_password?.should == true
+			@u.save!
+			@u.password_is?("").should == true
+		end
+		
+		it "works with validations on the column" do
+			@user.encrypt :password
+			@user.validates :password, :presence => { :if => :new_record? }, :length => { :within => 5..10 }, :if => :validate_password?
+			@u = @user.new
+			@u.password = ""
+			@u.save.should == false
+			@u.password = "abc"
+			@u.save.should == false
+			@u.password = "ooooooooops"
+			@u.save.should == false
+			@u.password = "valid"
+			@u.save.should == true
+			@u.save.should == true
+			@u.password = ""
+			@u.save.should == false
+		end
+		
+		it "works with multiple columns" do
+			@user.encrypt :password, :token
+			@u = @user.new
+			@u.password = "secret"
+			@u.save!
+			@u.password_is?("secret").should == true
+			@u.token.should be_nil
+			@u.token = "other"
+			@u.save!
+			@u.password_is?("secret").should == true
+			@u.token_is?("other").should == true
+			@u.save!
+			@u.password_is?("secret").should == true
+			@u.token_is?("other").should == true
+		end
 	
-	#end
+	end
 
 end

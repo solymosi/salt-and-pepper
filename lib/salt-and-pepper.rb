@@ -1,5 +1,7 @@
 module SaltPepper
+
 	DefaultOptions = { :length => 128 }
+	DefaultModelOptions = { :length => DefaultOptions[:length], :skip_blank => true }
 	Length = 96..192
 
 	def self.encrypt(password, options = DefaultOptions)
@@ -80,12 +82,25 @@ module SaltPepper
 		
 			def encrypt(*args)
 				options = args.extract_options!
-				options.keys.each { |k| raise ArgumentError, "Invalid option: #{k.to_s}" unless DefaultOptions.keys.include?(k.to_sym) }
+				options.keys.each { |k| raise ArgumentError, "Invalid option: #{k.to_s}" unless DefaultModelOptions.keys.include?(k.to_sym) }
 				raise ArgumentError, "No columns specified" if args.empty?
 				args.each do |arg|
 					raise ArgumentError, "Column name should be a symbol or a string" unless arg.is_a?(String) || arg.is_a?(Symbol)
 					raise ArgumentError, "'#{arg.to_s}' is not a valid column name" unless self.column_names.include?(arg.to_s)
-					write_inheritable_hash(:encrypted_attributes, { arg.to_sym => options.symbolize_keys.reverse_merge(DefaultOptions) })
+					
+					write_inheritable_hash(:encrypted_attributes, { arg.to_sym => options.symbolize_keys.reverse_merge(DefaultModelOptions) })
+					
+					self.class_eval <<-EVAL
+						def #{arg.to_s}_is?(check)
+							SaltPepper::verify(check, self.#{arg.to_s} || "")
+						end
+						def validate_#{arg.to_s}?
+							currently_plaintext?("#{arg.to_s}")
+						end
+					EVAL
+				end
+				if !self._save_callbacks.map { |c| c.filter.to_sym }.include?(:encrypt_columns_before_save)
+					self.before_save :encrypt_columns_before_save
 				end
 			end
 
@@ -95,6 +110,33 @@ module SaltPepper
 			klass.extend(ClassMethods)
 			klass.write_inheritable_hash(:encrypted_attributes, {})
 		end
+		
+		private
+		
+		def encrypt_columns_before_save
+			self.class.encrypted_attributes.each do |column, options|
+				if currently_plaintext?(column)
+					if options[:skip_blank]
+						encrypt_column(column, options) unless self[column.to_s].blank?
+						if self[column.to_s].blank?
+							self[column.to_s] = self.changes[column.to_s].first unless self.changes[column.to_s].nil?
+						end
+					else
+						self[column.to_s] = "" if self[column.to_s].nil?
+						encrypt_column(column, options)
+					end
+				end
+			end
+		end
+		
+		def encrypt_column(column, options)
+			write_attribute(column.to_sym, SaltPepper::encrypt(self[column.to_s], { :length => options[:length] }))
+		end
+		
+		def currently_plaintext?(column)
+			self[column.to_s].blank? || self.new_record? || self.changes.keys.include?(column.to_s)
+		end
+
 	end
 	
 	class ArgumentError < ArgumentError; end

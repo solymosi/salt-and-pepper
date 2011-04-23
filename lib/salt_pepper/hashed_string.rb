@@ -78,3 +78,10 @@ module SaltPepper
 
 	end
 end
+
+class String
+	def ==(obj)
+		return obj == self if obj.is_a?(SaltPepper::HashedString)
+		super
+	end
+end

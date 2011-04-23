@@ -134,5 +134,17 @@ describe SaltPepper::HashedString do
 			SaltPepper::HashedString.from_hash(@hash.result).eql?(@hash).should == true
 		end
 	end
+	
+	describe "String extension" do
+		it "works correctly" do
+			"secret".should == @hash
+		end
+	end
+	
+	describe "validation help messages" do
+		it "work correctly" do
+			lambda { @hash.blank? }
+		end
+	end
 
 end

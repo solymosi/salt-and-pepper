@@ -13,11 +13,13 @@ module SaltPepper
 				options = args.extract_options!
 				options.keys.each { |k| raise ArgumentError, "Invalid option: #{k.to_s}" unless DefaultHashColumnOptions.keys.include?(k.to_sym) }
 				raise ArgumentError, "No columns specified" if args.empty?
+				raise ArgumentError, "Primary key cannot be hashed" if (["id", self.primary_key] - (args.map { |a| a.to_s })).length < 2
 				args.each do |arg|
 					raise ArgumentError, "Column name should be a symbol or a string" unless arg.is_a?(String) || arg.is_a?(Symbol)
 					raise ArgumentError, "'#{arg.to_s}' is not a valid column name" unless self.column_names.include?(arg.to_s)
 					
 					write_inheritable_hash(:hashed_columns, { arg.to_sym => options.symbolize_keys.reverse_merge(DefaultHashColumnOptions) })
+					self.cached_attributes.delete arg.to_s
 					
 					self.class_eval <<-EVAL
 						def validate_#{arg.to_s}?
@@ -46,7 +48,7 @@ module SaltPepper
 			self.class.hashed_columns.each do |column, options|
 				next if hashed?(column)
 				if options[:skip_blank]
-					write_attribute(column, nil) if read_attribute(column).blank?
+					@attributes[column.to_s] = nil if read_attribute(column).blank?
 					perform_hashing_on_column(column, options[:length]) unless read_attribute(column).nil?
 				else
 					perform_hashing_on_column(column, options[:length]) unless read_attribute(column).nil?
@@ -55,11 +57,11 @@ module SaltPepper
 		end
 		
 		def perform_hashing_on_column(column, length)
-			write_attribute(column, HashedString.new(read_attribute(column), :length => length))
+			@attributes[column.to_s] = HashedString.new(read_attribute(column), :length => length)
 		end
 		
 		def convert_column_to_hashed_string(column)
-			write_attribute(column, HashedString.from_hash(read_attribute(column)))
+			@attributes[column.to_s] = HashedString.from_hash(read_attribute(column))
 		end
 		
 		def hashed?(column)

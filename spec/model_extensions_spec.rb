@@ -78,6 +78,16 @@ describe SaltPepper::ModelExtensions do
 			lambda { @user.hash_column :password, :oops => true }.should raise_error(ArgumentError)
 		end
 		
+		it "should not allow primary key column to be hashed" do
+			lambda { @user.hash_column :id }.should raise_error(ArgumentError)
+		end
+		
+		it "should delete attribute from cached attributes list when present" do
+			@user.cached_attributes.add "password"
+			@user.hash_column :password
+			@user.cached_attributes.include?("password").should == false
+		end
+		
 	end
 	
 	describe "after_initialize" do
@@ -242,6 +252,22 @@ describe SaltPepper::ModelExtensions do
 			@w = @user.first
 			@w.validate_password?.should == true
 			@w.password.should be_nil
+		end
+		
+		it "works with change tracking" do
+			@user.hash_column :password
+			@u = @user.new
+			@u.password = "secret"
+			@u.save
+			@u = @user.first
+			@u.changed_attributes.count.should be_zero
+			@u.password = @u.password
+			@u.reset_password!
+			@u.password.class.should == SaltPepper::HashedString
+			@u.password = "other"
+			@u.reset_password!
+			@u.password.class.should == SaltPepper::HashedString
+			@u.validate_password?.should == false
 		end
 	
 	end

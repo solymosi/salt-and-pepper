@@ -21,7 +21,7 @@ gem "salt-and-pepper"
 
 h2. Usage
 
-To enable automatic hashing for a column, call <pre>encrypt</pre> in your model:
+To enable automatic hashing for a column, add the *encrypt* method to your model:
 
 <pre>
 class User < ActiveRecord::Base
@@ -34,6 +34,7 @@ You can specify multiple columns in one line or in separate lines:
 <pre>
 class User < ActiveRecord::Base
   encrypt :password, :security_token
+
   # or
   encrypt :password
   encrypt :security_token
@@ -42,12 +43,13 @@ end
 
 h3. Options
 
-You can pass the <pre>:length</pre> option to change the length of the resulting hash.
+You can pass the *:length* option to change the length of the resulting hash.
 Numbers between 96 and 192 are accepted, the default value is 128. Make sure the column size is in terms with that as well!
 
 <pre>
 # set length for both columns
 encrypt :password, :security_token, :length => 100
+
 # or adjust them individually
 encrypt :password, :length => 160
 encrypt :secret, :length => 120
@@ -55,14 +57,14 @@ encrypt :secret, :length => 120
 
 The <pre>:skip_blank</pre> option determines what happens when you try to save an <pre>encrypt</pre>-ed column with an empty value (assuming there are no validations to prevent that):
 
-* <pre>true</pre> (default): empty values will not be hashed and saved. The field will keep its previous value.
-* <pre>false</pre>: empty values will be hashed and stored (<pre>nil</pre> is treated as an empty string). This makes no sense in most situations.
+* *true* (default): empty values will not be hashed and saved. The field will keep its previous value.
+* *false*: empty values will be hashed and stored (nil is treated as an empty string). This makes no sense in most situations.
 
 This behavior makes it super easy to create "edit profile" forms that only update the user's password if a new one was entered.
 
 h3. Validating hashed columns
 
-Salt and Pepper provides the <pre>validate_[column]?</pre> method for deciding whether validations on the column should be performed.
+Salt and Pepper provides the *validate__[column]_?* method for deciding whether validations on the column should be performed.
 Use it to prevent running your sophisticated length-checking algorithms on a 128-character hash :). Skipping validation of hashed values is safe because they were already checked at the time they were set.
 
 <pre>
@@ -92,7 +94,7 @@ Consider a password change form:
 <% end %>
 </pre>
 
-The problem with this is that the password field will be populated with the current password's hash when displayed. To prevent this, you can use the <pre>[column]_cleartext</pre> method which returns the current value, or an empty string if the field is in a hashed state.
+The problem with this is that the password field will be populated with the current password's hash when displayed. To prevent this, you can use the *_[column]__cleartext* method which returns the current value, or an empty string if the field is in a hashed state.
 
 <pre>
 <%= form_for @user do |f| %>
@@ -106,4 +108,4 @@ This way the password field is blank when initially displayed, but properly redi
 h2. License
 
 Released under the MIT license.
-Copyright (C) Máté Solymosi 2011
+Copyright (C) MÃ¡tÃ© Solymosi 2011

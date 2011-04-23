@@ -143,7 +143,8 @@ describe SaltPepper::HashedString do
 	
 	describe "validation help messages" do
 		it "work correctly" do
-			lambda { @hash.blank? }
+			lambda { @hash.length }.should raise_error(SaltPepper::ValueHashedError)
+			lambda { @hash =~ /.*/ }.should raise_error(SaltPepper::ValueHashedError)
 		end
 	end
 

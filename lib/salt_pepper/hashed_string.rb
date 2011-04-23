@@ -55,6 +55,14 @@ module SaltPepper
 			n
 		end
 		
+		def length
+			self.class.raise_value_hashed_error
+		end
+		
+		def =~(regexp)
+			self.class.raise_value_hashed_error
+		end
+		
 		protected
 		
 		def self.hsh(password, salt)
@@ -74,6 +82,10 @@ module SaltPepper
 				end
 			end
 			true
+		end
+		
+		def self.raise_value_hashed_error
+			raise SaltPepper::ValueHashedError, "This attribute is currently hashed, so it cannot be accessed or validated. Add :if => :validate_[column name]? to your validator to prevent it from running when the attribute is hashed."
 		end
 
 	end

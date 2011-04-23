@@ -8,4 +8,5 @@ require "salt_pepper/model_extensions"
 
 module SaltPepper
 	class ArgumentError < ArgumentError; end
+	class ValueHashedError < ArgumentError; end
 end

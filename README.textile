@@ -13,7 +13,7 @@ Features:
 
 h2. Installation
 
-Just add it to your Gemfile and run <code>bundle install</code>
+Just add it to your Gemfile and run <code>bundle install</code>:
 
 <pre>
 gem "salt-and-pepper"

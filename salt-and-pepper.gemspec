@@ -10,7 +10,7 @@ Gem::Specification.new do |s|
 	s.email       = ["mate@solymosi.eu"]
 	s.homepage    = "http://github.com/SMWEB/salt-and-pepper"
 	s.summary     = %q{Super easy password salting and hashing for ActiveRecord (Rails)}
-	s.description = %q{Provides automatic password hashing (and salting) for ActiveRecord (>= 3.0) and a couple of methods for generating random strings, tokens, etc.}
+	s.description = %q{Super easy password salting and hashing for ActiveRecord (Rails)}
 
 	s.rubyforge_project = "salt-and-pepper"
 

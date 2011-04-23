@@ -3,17 +3,17 @@ h1. Salt and Pepper
 Provides automatic password hashing for ActiveRecord (>= 3.0) and a couple of methods for generating random strings, tokens, etc.
 Features:
 
-* Mark columns for auto-hashing with a single line of code in your models.
+* Mark columns for auto-hashing with a single line of code.
 * Automatic salting of hashes. No separate column is required for the salt.
 * Does not break validations on the hashed columns (only a small change is required).
-* Super easy hash verification
+* Super easy hash verification.
 * Tested using RSpec 2
 
-SHA256 is used for hashing, and the SecureRandom module in Active Support is used for generating random stuff.
+<code>Digest::SHA256</code> is used for hashing and <code>ActiveRecord::SecureRandom</code> is used for generating random stuff.
 
 h2. Installation
 
-Just add it to your Gemfile:
+Just add it to your Gemfile and run <code>bundle install</code>
 
 <pre>
 gem "salt-and-pepper"
@@ -21,7 +21,7 @@ gem "salt-and-pepper"
 
 h2. Usage
 
-To enable automatic hashing for a column, add the *hash_column* method to your model:
+To enable automatic hashing for a column, call <code>hash_column</code> in your model:
 
 <pre>
 class User < ActiveRecord::Base
@@ -43,8 +43,8 @@ end
 
 h3. Options
 
-You can pass the *:length* option to change the length of the resulting hash.
-Numbers between 96 and 192 are accepted, the default value is 128. Make sure the column size is in terms with that as well!
+You can pass the <code>:length</code> option to change the length of the stored hash.
+Numbers between 96 and 192 are accepted, the default value is 128. Make sure the database column can store a string that long!
 
 <pre>
 # set length for both columns
@@ -55,8 +55,8 @@ hash_column :password, :length => 160
 hash_column :secret, :length => 120
 </pre>
 
-By default, blank (= empty or whitespace-only) strings will be converted to nil, and will not be hashed.
-If you _really_ want blank strings to be hashed, use the *:hash_blank_strings* option:
+By default, blank _(= empty or whitespace-only)_ strings will be converted to <code>nil</code>, and will not be hashed.
+If you _really_ want blank strings to be hashed, use the <code>:hash_blank_strings</code> option:
 
 <pre>
 # Default behavior:
@@ -103,7 +103,7 @@ end
 
 h3. Validating hashed columns
 
-Salt and Pepper provides the *validate_[column]?* method for deciding whether validations on the column should be performed.
+Salt and Pepper provides the <code>validate_[column]?</code> method for deciding whether validations on the column should be performed.
 Use it to prevent running your sophisticated length-checking algorithms on a 128-character hash :). Skipping validation of hashed values is safe because they were already checked at the time they were set.
 
 <pre>

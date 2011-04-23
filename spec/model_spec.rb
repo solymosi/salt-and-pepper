@@ -7,6 +7,7 @@ describe "Model" do
 		ActiveRecord::Base.connection.create_table :users do |t|
 			t.string :password
 			t.string :token
+			t.string :required, :null => false, :default => "something"
 		end
 		
 		class User; end
@@ -185,6 +186,30 @@ describe "Model" do
 			@u.save!
 			@u.password_is?("secret").should == true
 			@u.token_is?("other").should == true
+		end
+		
+		it "remains in a consistent state if saving fails" do
+			@user.encrypt :password
+			@u = @user.new
+			@u.required = nil
+			@u.password = "secret"
+			@u.save! rescue nil
+			@u.password_is?("secret").should == true
+			@u.validate_password?.should == false
+			@u.required = "something"
+			@u.save!
+			@u.password_is?("secret").should == true
+			@u.validate_password?.should == false
+		end
+		
+		it "works with finds" do
+			@user.encrypt :password
+			@u = @user.new
+			@u.password = "secret"
+			@u.save
+			@v = @user.first
+			@v.validate_password?.should == false
+			@v.password_is?("secret").should == true
 		end
 	
 	end

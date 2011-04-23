@@ -149,8 +149,8 @@ SaltPepper.code                                       # => "29Y3WSEC"     (alpha
 SaltPepper.code(5)                                    # => "89U1F"
 SaltPepper.code(10, 'a'..'z')                         # => "mqxeozlelw"
 SaltPepper.code(15, (0..1).to_a + ('a'..'b').to_a)    # => "0ab1b0b1b01a0a1"
-SaltPepper.token                                      # => a0d5828f79e9e22dbc1f896e49f8183a
-SaltPepper.token(16)                                  # => caa4a085edb19499
+SaltPepper.token                                      # => "a0d5828f79e9e22dbc1f896e49f8183a"
+SaltPepper.token(16)                                  # => "caa4a085edb19499"
 </pre>
 
 h2. License

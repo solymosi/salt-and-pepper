@@ -100,6 +100,10 @@ module SaltPepper
 						def #{arg.to_s}_cleartext
 							currently_plaintext?("#{arg.to_s}") ? (read_attribute(:#{arg.to_s}) || "") : ""
 						end
+						def #{arg.to_s}=(*)
+							super
+							@hashed_attributes -= [:#{arg.to_s}] if @changed_attributes.keys.include?("#{arg.to_s}")
+						end
 					EVAL
 				end
 				if !self._save_callbacks.map { |c| c.filter.to_sym }.include?(:encrypt_columns_before_save)
@@ -112,32 +116,48 @@ module SaltPepper
 		def self.included(klass)
 			klass.extend(ClassMethods)
 			klass.write_inheritable_hash(:encrypted_attributes, {})
+			klass.instance_eval <<-EVAL
+				after_initialize :initialize_hashed_attributes
+			EVAL
 		end
 		
 		private
 		
 		def encrypt_columns_before_save
 			self.class.encrypted_attributes.each do |column, options|
-				if currently_plaintext?(column)
-					if options[:skip_blank]
-						encrypt_column(column, options) unless self[column.to_s].blank?
-						if self[column.to_s].blank?
-							self[column.to_s] = self.changes[column.to_s].first unless self.changes[column.to_s].nil?
+				next unless currently_plaintext?(column)
+				
+				if options[:skip_blank]
+					encrypt_column(column, options) unless self[column.to_s].blank?
+					if self[column.to_s].blank?
+						unless self.changes[column.to_s].nil?
+							@hashed_attributes << column.to_sym unless self.changes[column.to_s].first.blank?
+							self[column.to_s] = self.changes[column.to_s].first
 						end
-					else
-						self[column.to_s] = "" if self[column.to_s].nil?
-						encrypt_column(column, options)
 					end
+				else
+					self[column.to_s] = "" if self[column.to_s].nil?
+					encrypt_column(column, options)
 				end
 			end
 		end
 		
 		def encrypt_column(column, options)
 			write_attribute(column.to_sym, SaltPepper::encrypt(read_attribute(column.to_sym), { :length => options[:length] }))
+			@hashed_attributes << column.to_sym
 		end
 		
 		def currently_plaintext?(column)
-			read_attribute(column.to_sym).blank? || self.new_record? || self.changes.keys.include?(column.to_s)
+			!@hashed_attributes.include?(column.to_sym)
+		end
+		
+		def initialize_hashed_attributes
+			@hashed_attributes = []
+			unless self.new_record?
+				self.class.encrypted_attributes.keys.each do |k|
+					@hashed_attributes << k.to_sym unless read_attribute(k.to_sym).blank?
+				end
+			end
 		end
 
 	end

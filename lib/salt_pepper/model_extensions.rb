@@ -1,7 +1,7 @@
 module SaltPepper
 	module ModelExtensions
 	
-		DefaultHashColumnOptions = { :length => SaltPepper::HashedString::DefaultOptions[:length], :skip_blank => true }
+		DefaultHashColumnOptions = { :length => SaltPepper::HashedString::DefaultOptions[:length], :hash_blank_strings => false }
 		
 		module ClassMethods
 		
@@ -47,12 +47,8 @@ module SaltPepper
 		def hash_before_save
 			self.class.hashed_columns.each do |column, options|
 				next if hashed?(column)
-				if options[:skip_blank]
-					@attributes[column.to_s] = nil if read_attribute(column).blank?
-					perform_hashing_on_column(column, options[:length]) unless read_attribute(column).nil?
-				else
-					perform_hashing_on_column(column, options[:length]) unless read_attribute(column).nil?
-				end
+				@attributes[column.to_s] = nil if read_attribute(column).blank? && !options[:hash_blank_strings]
+				perform_hashing_on_column(column, options[:length]) unless read_attribute(column).nil?
 			end
 		end
 		

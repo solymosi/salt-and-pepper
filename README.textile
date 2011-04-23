@@ -6,7 +6,7 @@ Features:
 * Mark columns for auto-hashing with a single line of code in your models.
 * Automatic salting of hashes. No separate column is required for the salt.
 * Does not break validations on the hashed columns (only a small change is required).
-* Provides convenience methods for verification.
+* Super easy hash verification
 * Tested using RSpec 2
 
 SHA256 is used for hashing, and the SecureRandom module in Active Support is used for generating random stuff.
@@ -21,11 +21,11 @@ gem "salt-and-pepper"
 
 h2. Usage
 
-To enable automatic hashing for a column, add the *encrypt* method to your model:
+To enable automatic hashing for a column, add the *hash_column* method to your model:
 
 <pre>
 class User < ActiveRecord::Base
-  encrypt :password
+  hash_column :password
 end
 </pre>
 
@@ -33,11 +33,11 @@ You can specify multiple columns in one line or in separate lines:
 
 <pre>
 class User < ActiveRecord::Base
-  encrypt :password, :security_token
+  hash_column :password, :security_token
 
   # or
-  encrypt :password
-  encrypt :security_token
+  hash_column :password
+  hash_column :security_token
 end
 </pre>
 
@@ -48,27 +48,37 @@ Numbers between 96 and 192 are accepted, the default value is 128. Make sure the
 
 <pre>
 # set length for both columns
-encrypt :password, :security_token, :length => 100
+hash_column :password, :security_token, :length => 100
 
 # or adjust them individually
-encrypt :password, :length => 160
-encrypt :secret, :length => 120
+hash_column :password, :length => 160
+hash_column :secret, :length => 120
 </pre>
 
-The *:skip_blank* option determines what happens when you try to save an _encrypt_-ed column with an empty value (assuming there are no validations to prevent that):
+By default, blank (= empty or whitespace-only) strings will be converted to nil, and will not be hashed.
+If you _really_ want blank strings to be hashed, use the *:hash_blank_strings* option:
 
-* *true* (default): empty values will not be hashed and saved. The field will keep its previous value.
-* *false*: empty values will be hashed and stored (nil is treated as an empty string). This makes no sense in most situations.
+<pre>
+# Default behavior:
+#                    nil => nil
+#           empty string => nil
+# whitespace-only string => nil
 
-This behavior makes it super easy to create "edit profile" forms that only update the user's password if a new one was entered.
+hash_column :password, :hash_blank_strings => true
+
+# New behavior:
+#                    nil => nil
+#           empty string => 77c0a93ad8e5f42cf676...
+# whitespace-only string => 1b8d091174299844b1a4...
+</pre>
 
 h3. Verification
 
-You can use the *==[column]==_is?* method to verify against a hashed value:
+Just compare the two values:
 
 <pre>
-if @user.password_is?("secret")
-  # the password is correct
+if @user.password == "secret"
+  # password is valid
 end
 </pre>
 
@@ -77,14 +87,14 @@ A full example:
 <pre>
 # app/models/user.rb
 class User < ActiveRecord::Base
-  encrypt :password
+  hash_column :password
 end
 
 # app/controllers/sessions_controller.rb
 def create
   @user = User.find_by_username(params[:username])
-  if @user.present? && @user.password_is?(params[:password])
-    # log in the user here
+  if @user.present? && @user.password == params[:password]
+    # login user here
   else
     redirect_to new_session_path, :alert => "Invalid username or password."
   end
@@ -102,37 +112,6 @@ class User < ActiveRecord::Base
   validates :password, :length => { :within => 6..100 }, :if => :validate_password?
 end
 </pre>
-
-A common scenario is to require a password when creating a user but not when it is updated:
-
-<pre>
-class User < ActiveRecord::Base
-  encrypt :password
-  validates :password, :presence => { :if => :new_record? }, :length => { :within => 6..100, :allow_blank => true }, :if => :validate_password?
-end
-</pre>
-
-h3. Forms
-
-Consider a password change form:
-
-<pre>
-<%= form_for @user do |f| %>
-  <%= f.password_field :password %>
-  <%= f.password_field :password_confirmation %>
-<% end %>
-</pre>
-
-The problem with this is that the password field will be populated with the current password's hash when displayed. To prevent this, you can use the *==[column]==_cleartext* method which returns the current value, or an empty string if the field is in a hashed state.
-
-<pre>
-<%= form_for @user do |f| %>
-  <%= f.password_field :password, :value => @user.password_cleartext %>
-  <%= f.password_field :password_confirmation %>
-<% end %>
-</pre>
-
-This way the password field is blank when initially displayed, but properly redisplays the previous value if there was an error.
 
 h3. Generating random stuff
 

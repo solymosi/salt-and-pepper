@@ -54,9 +54,9 @@ describe SaltPepper::ModelExtensions do
 		end
 		
 		it "should allow valid parameters" do
-			@user.hash_column :password, :length => 100, :skip_blank => false
+			@user.hash_column :password, :length => 100, :hash_blank_strings => true
 			@user.hashed_columns.count.should == 1
-			@user.hashed_columns[:password].should == { :length => 100, :skip_blank => false }
+			@user.hashed_columns[:password].should == { :length => 100, :hash_blank_strings => true }
 		end
 		
 		it "should apply defaults for unset options" do
@@ -172,8 +172,8 @@ describe SaltPepper::ModelExtensions do
 			@u.validate_password?.should == true
 		end
 		
-		it "hashes columns with skip_blank: false" do
-			@user.hash_column :password, :skip_blank => false
+		it "correctly hashes columns with :hash_blank_strings => true" do
+			@user.hash_column :password, :hash_blank_strings => true
 			@u = @user.new
 			@u.password = nil
 			@u.save!

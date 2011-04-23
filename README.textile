@@ -55,7 +55,7 @@ encrypt :password, :length => 160
 encrypt :secret, :length => 120
 </pre>
 
-The <pre>:skip_blank</pre> option determines what happens when you try to save an <pre>encrypt</pre>-ed column with an empty value (assuming there are no validations to prevent that):
+The *:skip_blank* option determines what happens when you try to save an _encrypt_-ed column with an empty value (assuming there are no validations to prevent that):
 
 * *true* (default): empty values will not be hashed and saved. The field will keep its previous value.
 * *false*: empty values will be hashed and stored (nil is treated as an empty string). This makes no sense in most situations.
@@ -64,7 +64,7 @@ This behavior makes it super easy to create "edit profile" forms that only updat
 
 h3. Validating hashed columns
 
-Salt and Pepper provides the *validate__[column]_?* method for deciding whether validations on the column should be performed.
+Salt and Pepper provides the *validate_[column]?* method for deciding whether validations on the column should be performed.
 Use it to prevent running your sophisticated length-checking algorithms on a 128-character hash :). Skipping validation of hashed values is safe because they were already checked at the time they were set.
 
 <pre>
@@ -94,7 +94,7 @@ Consider a password change form:
 <% end %>
 </pre>
 
-The problem with this is that the password field will be populated with the current password's hash when displayed. To prevent this, you can use the *_[column]__cleartext* method which returns the current value, or an empty string if the field is in a hashed state.
+The problem with this is that the password field will be populated with the current password's hash when displayed. To prevent this, you can use the *[column]_cleartext* method which returns the current value, or an empty string if the field is in a hashed state.
 
 <pre>
 <%= form_for @user do |f| %>

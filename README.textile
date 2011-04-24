@@ -118,8 +118,8 @@ h3. Generating random stuff
 Salt and Pepper has a couple of handy methods for generating random numbers, codes, tokens, etc:
 
 <pre>
-SaltPepper.random_number(6)                           # => 4     (identical to: 0..5)
-SaltPepper.random_number(10..20)                      # => 11
+SaltPepper.number(6)                                  # => 4     (identical to: 0..5)
+SaltPepper.number(10..20)                             # => 11
 SaltPepper.alpha_code                                 # => "SNPBJSDG"
 SaltPepper.alpha_code(4)                              # => "FKNP"
 SaltPepper.numeric_code                               # => "01570475"

@@ -9,7 +9,7 @@ Features:
 * Super easy hash verification.
 * Tested using RSpec 2
 
-<code>Digest::SHA256</code> is used for hashing and <code>ActiveRecord::SecureRandom</code> is used for generating random stuff.
+<code>Digest::SHA256</code> is used for hashing and <code>ActiveSupport::SecureRandom</code> is used for generating random stuff.
 
 h2. Installation
 

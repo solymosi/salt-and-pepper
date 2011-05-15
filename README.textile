@@ -1,6 +1,6 @@
 h1. Salt and Pepper
 
-Provides automatic password hashing for ActiveRecord (>= 3.0) and a couple of methods for generating random strings, tokens, etc.
+Provides automatic password hashing for ActiveRecord (>= 3.0.4) and a couple of methods for generating random strings, tokens, etc.
 Features:
 
 * Mark columns for auto-hashing with a single line of code.

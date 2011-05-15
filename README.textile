@@ -19,6 +19,8 @@ Just add it to your Gemfile and run <code>bundle install</code>:
 gem "salt-and-pepper"
 </pre>
 
+Note: Rails 3.0.4 or higher is required.
+
 h2. Usage
 
 To enable automatic hashing for a column, call <code>hash_column</code> in your model:
